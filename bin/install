@@ -12,22 +12,26 @@ source "${plugin_dir}/lib/utils.bash"
 [ -n "${ASDF_INSTALL_PATH:-}" ] || fail "ASDF_INSTALL_PATH is not set"
 [ -n "${ASDF_DOWNLOAD_PATH:-}" ] || fail "ASDF_DOWNLOAD_PATH is not set"
 
-install_tool() {
-	mkdir -p "${ASDF_INSTALL_PATH}/bin"
-	cp "${ASDF_DOWNLOAD_PATH}/${TOOL_NAME}" "${ASDF_INSTALL_PATH}/bin/${TOOL_NAME}"
-	chmod +x "${ASDF_INSTALL_PATH}/bin/${TOOL_NAME}"
-
-	# Smoke-test the binary that was just installed rather than trusting the
-	# copy: `version` needs no configuration and touches no network.
-	local reported
-	reported=$("${ASDF_INSTALL_PATH}/bin/${TOOL_NAME}" version)
-	[ "$reported" = "$ASDF_INSTALL_VERSION" ] ||
-		fail "installed binary reports '${reported}', expected '${ASDF_INSTALL_VERSION}'"
-
-	echo "* ${TOOL_NAME} ${ASDF_INSTALL_VERSION} installed"
+# A half-written install directory is worse than none: asdf counts it as an
+# installed version. Cleaning up in a trap rather than after a failed call
+# covers every exit path — `set -e` on a failed copy, and `fail`, which exits
+# the shell outright and so would skip any cleanup written below.
+cleanup_failed_install() {
+	local status=$?
+	trap - EXIT
+	[ "$status" -eq 0 ] || rm -rf "${ASDF_INSTALL_PATH}"
+	exit "$status"
 }
+trap cleanup_failed_install EXIT
 
-if ! install_tool; then
-	rm -rf "$ASDF_INSTALL_PATH"
-	fail "could not install ${TOOL_NAME} ${ASDF_INSTALL_VERSION}"
-fi
+mkdir -p "${ASDF_INSTALL_PATH}/bin"
+cp "${ASDF_DOWNLOAD_PATH}/${TOOL_NAME}" "${ASDF_INSTALL_PATH}/bin/${TOOL_NAME}"
+chmod +x "${ASDF_INSTALL_PATH}/bin/${TOOL_NAME}"
+
+# Smoke-test the binary that was just installed rather than trusting the copy:
+# `version` needs no configuration and touches no network.
+reported=$("${ASDF_INSTALL_PATH}/bin/${TOOL_NAME}" version)
+[ "$reported" = "$ASDF_INSTALL_VERSION" ] ||
+	fail "installed binary reports '${reported}', expected '${ASDF_INSTALL_VERSION}'"
+
+echo "* ${TOOL_NAME} ${ASDF_INSTALL_VERSION} installed"

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+plugin_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
+# shellcheck source=../lib/utils.bash
+source "${plugin_dir}/lib/utils.bash"
+
+[ "${ASDF_INSTALL_TYPE:-version}" = "version" ] ||
+	fail "only released versions can be installed, not refs — ${TOOL_NAME} ships as a binary, not source"
+
+[ -n "${ASDF_DOWNLOAD_PATH:-}" ] || fail "ASDF_DOWNLOAD_PATH is not set"
+[ -n "${ASDF_INSTALL_VERSION:-}" ] || fail "ASDF_INSTALL_VERSION is not set"
+
+mkdir -p "$ASDF_DOWNLOAD_PATH"
+
+archive="${ASDF_DOWNLOAD_PATH}/${TOOL_NAME}-${ASDF_INSTALL_VERSION}.tar.gz"
+download_release "$ASDF_INSTALL_VERSION" "$archive"
+
+# The archive holds the binary at its root, next to README.md and CHANGELOG.md.
+tar -xzf "$archive" -C "$ASDF_DOWNLOAD_PATH" || fail "could not extract ${archive}"
+rm -f "$archive"
+
+[ -f "${ASDF_DOWNLOAD_PATH}/${TOOL_NAME}" ] ||
+	fail "the archive did not contain ${TOOL_NAME} at its root"

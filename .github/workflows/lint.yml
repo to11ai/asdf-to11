@@ -1,0 +1,27 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      # Installs the shellcheck and shfmt versions pinned in .tool-versions,
+      # so CI and a local run check with the same tools.
+      - uses: asdf-vm/actions/install@v4
+      - run: scripts/lint.bash
+
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker://rhysd/actionlint:1.7.7
+        with:
+          args: -color

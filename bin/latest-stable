@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+plugin_dir=$(dirname "$(dirname "${BASH_SOURCE[0]}")")
+# shellcheck source=../lib/utils.bash
+source "${plugin_dir}/lib/utils.bash"
+
+# $1 is an optional prefix filter, e.g. `0.1`.
+query="${1:-}"
+
+# Prereleases are excluded so `latest` never resolves to an rc. Both greps
+# need `|| true`: a grep that matches nothing exits 1, which under
+# `set -o pipefail` would abort with no message — so a CLI sitting entirely
+# on an rc line would break `asdf install to11 latest` rather than explain
+# itself.
+versions=$(list_all_versions | { grep -v -- '-' || true; } | sort_versions)
+
+if [ -n "$query" ]; then
+	versions=$(printf '%s\n' "$versions" | { grep -E "^${query}" || true; })
+fi
+
+latest=$(printf '%s\n' "$versions" | tail -1)
+[ -n "$latest" ] ||
+	fail "no stable release matches '${query:-*}'. Prereleases are excluded; see ${GH_REPO}/releases"
+
+printf '%s\n' "$latest"

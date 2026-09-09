@@ -1,6 +1,6 @@
 # asdf-to11
 
-[asdf](https://asdf-vm.com) plugin for [`to11`](https://github.com/to11ai/to11-cli) — the to11 CLI.
+[asdf](https://asdf-vm.com) plugin for [`to11`](https://github.com/to11ai/to11-cli).
 
 ## Install
 
@@ -18,6 +18,3 @@ to11 version
 | linux | ✅ | ✅ |
 | darwin | ✅ | ✅ |
 
-## Versions
-
-`asdf list all to11` reads the tags of `to11ai/to11-cli`, which are plain `v<semver>` — the monorepo's `cli-` prefix is stripped when a release is published. `latest` skips prereleases, so it never resolves to an `-rc` build.

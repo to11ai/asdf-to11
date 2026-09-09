@@ -1,0 +1,29 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  plugin-test:
+    # Installs the tool for real through asdf, on both platforms we publish
+    # binaries for. This could not run while to11-cli was private, because
+    # the download needed a credential.
+    #
+    # The action derives the plugin name from this repository — `asdf-to11`
+    # becomes `to11` — and defaults the version to `latest`, so this also
+    # exercises bin/latest-stable rather than only a pinned version.
+    name: asdf plugin test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: asdf-vm/actions/plugin-test@v4
+        with:
+          command: to11 version
